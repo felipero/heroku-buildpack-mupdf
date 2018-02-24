@@ -1,17 +1,37 @@
 #!/usr/bin/env bash
+indent() {
+  sed -u 's/^/       /'
+}
 
 echo "-----> Installing MuPDF 1.8"
 
 # change to the the BUILD_DIR ($1)
-cd $1
+BUILD_DIR=$1
+VENDOR_DIR="vendor"
+DOWNLOAD_URL="http://mupdf.com/downloads/archive/mupdf-1.8-source.tar.gz"
 
-# download the binary
-wget http://mupdf.com/downloads/archive/mupdf-1.8-source.tar.gz -O mupdf.tar.gz
+echo "DOWNLOAD_URL = " $DOWNLOAD_URL | indent
 
-# untar the binary
-tar -xvf mupdf.tar.gz
-
-# compile
+cd $BUILD_DIR
+mkdir -p $VENDOR_DIR
+cd $VENDOR_DIR
+mkdir -p mupdf
+cd mupdf
 mkdir bin
+curl -L --silent $DOWNLOAD_URL | tar xvz
+
+echo "Compiling mupdf" | indent
 cd mupdf-1.8-source
 make HAVE_X11=no
+
+mv ./build/debug/* $BUILD_DIR/$VENDOR_DIR/mupdf/bin/
+
+echo "Removing MuPDF source" | indent
+cd ../
+rm -rf mupdf-1.8-source
+
+echo "exporting PATH for MuPDF" | indent
+
+PROFILE_PATH="$BUILD_DIR/.profile.d/mupdf.sh"
+mkdir -p $(dirname $PROFILE_PATH)
+echo 'export PATH="$PATH:${HOME}/vendor/mupdf/bin"' >> $PROFILE_PATH
